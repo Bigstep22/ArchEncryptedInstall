@@ -1,0 +1,75 @@
+\section{Installation}
+\subsection{Initial Setup}
+Start by selecting the proper mirror servers from /etc/pacman.d/mirrorlist by moving nearby server to the top in order to speedup downloads for this and future installations:
+\begin{lstlisting}{language=bash}
+# vim /etc/pacman.d/mirrorlist
+\end{lstlisting}
+\subsection{Installation}
+Run lsblk one more time to make sure that all partitions are mounted properly.
+\begin{lstlisting}{language=bash}
+# lsblk
+\end{lstlisting}
+The moment we've all been waiting for, installing base Arch (as well as vim) onto the system:
+\begin{lstlisting}{language=bash}
+# pacstrap /mnt base vim
+\end{lstlisting}
+
+\subsection{fstab}
+Since we have a custom partition setup the fstab setup is a little bit more involved than for the usual installation run both of the following:
+\begin{lstlisting}{language=bash}
+# genfstab -U /mnt >> /mnt/etc/fstab
+# genfstab -L /mnt >> /mnt/etc/fstab
+\end{lstlisting}
+Then execute
+\begin{lstlisting}{language=bash}
+# vim /mnt/etc/fstab
+\end{lstlisting}
+And use vim to delete the three sets of lines referencing the lvm-based partitions by UUID and delete the one line referencing the boot partition by label.
+
+An example fstab file is shown below as specified above:
+\inputminted[linenos, fontsize=\small, baselinestretch=0.875, frame=lines]{shell}{Sections/4/fstab.txt}
+
+\subsection{Chroot and Timezone}
+Chroot into the new system:
+\begin{lstlisting}{language=bash}
+# arch-chroot /mnt
+\end{lstlisting}
+Set the timezone:
+\begin{lstlisting}{language=bash}
+# ln -sf /usr/share/zoneinfo/Region/City /etc/localtime
+\end{lstlisting}
+Which in the case of Amsterdam is:
+\begin{lstlisting}{language=bash}
+# ln -sf /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
+\end{lstlisting}
+Then run hwclock to generate /etc/adjtime:
+\begin{lstlisting}{language=bash}
+# hwclock --systohc
+\end{lstlisting}
+(This assumes the hardware clock is set to UTC)
+
+\subsection{Localization and Network}
+Uncomment en\textunderscore US.UTF-8 UTF-8 and other needed locales in /etc/locale.gen then generate the locales with:
+\begin{lstlisting}{language=bash}
+# locale-gen
+\end{lstlisting}
+Then set the LANG variable in locale.conf:
+\begin{minted}[frame=lines]{bash}
+/etc/locale.conf
+======================================================================
+LANG=en_US.UTF-8
+\end{minted}
+Create the hostname file:
+\begin{minted}[frame=lines]{bash}
+/etc/hostname
+======================================================================
+myhostname
+\end{minted}
+And corresponding hosts to the hosts file:
+\begin{minted}[frame=lines]{bash}
+/etc/hosts
+======================================================================
+127.0.0.1   localhost
+::1         localhost
+127.0.1.1   myhostname.localdomain	myhostname
+\end{minted}

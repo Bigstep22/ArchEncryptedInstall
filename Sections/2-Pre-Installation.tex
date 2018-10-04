@@ -1,0 +1,25 @@
+\section{Pre-installation}
+\subsection{Verify Boot Mode}
+We can verify EFI boot mode by running:
+\begin{lstlisting}{language=bash}
+# ls /sys/firmware/efi/efivars
+\end{lstlisting}
+and making sure that directory exists.
+If it does, then you are good to go, otherwise you are likely booted in BOIS mode, refer to your motherboard manual to see if it is possible to boot using UEFI mode.
+
+\subsection{Internet}
+If you are connected via ethernet (or a VM) make sure you have internet by running:
+\begin{lstlisting}{language=bash}
+# ping archlinux.org
+\end{lstlisting}
+If the ping has a response, it means you are connected to the internet and you are good to go. If you are not connected, you either need to configure your wireless interface of find some other way of connecting to the internet (I defer to the ArchWiki here. ArchWiki is your friend).
+
+\subsection{System Clock}
+Make sure your system clock is accurate by using timedatectl:
+\begin{lstlisting}{language=bash}
+# timedatectl set-ntp true
+\end{lstlisting}
+You can check the service status by running:
+\begin{lstlisting}{language=bash}
+# timedatectl status
+\end{lstlisting}

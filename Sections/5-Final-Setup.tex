@@ -1,0 +1,114 @@
+\section{Final Setup}
+\subsection{Initramfs and Password}
+Edit the mkinitcpio.conf file to add the needed hooks: keyboard, keymap, encrypt, lvm2. Change:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+/etc/mkinitcpio.conf
+======================================================================
+HOOKS=(base udev autodetect consolefont modconf block filesystems fsck)
+\end{minted}
+To:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+/etc/mkinitcpio.conf
+======================================================================
+HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck)
+\end{minted}
+And add the following below the HOOKS next to all the commented out compression examples:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+/etc/mkinitcpio.conf
+======================================================================
+COMPRESSION="cat"
+\end{minted}
+In order to disable ramdisk compression in order to speedup booting times.
+After setting the proper hooks and settings, generate the initramfs:
+\begin{lstlisting}{language=bash}
+# mkinitcpio -p linux
+\end{lstlisting}
+Set the root password by running:
+\begin{lstlisting}{language=bash}
+# passwd
+\end{lstlisting}
+
+\subsection{Bootloader}
+We will be installing systemd-boot.
+Since the EFI system partition (esp) will be located at /boot any instances of 'esp' below can be replaced with /boot:
+\begin{lstlisting}{language=bash}
+# bootctl --path=esp install
+\end{lstlisting}
+Whenever there is a new version of systemd-boot, the boot manager must be updated manually by the user. This is a safeguard because the user may not have the boot partition mounted to the system by default. However, since we will always have our beet partition mounted, we can set this up to be done automatically by creating a pacman hook at /etc/pacman.d/hooks/:
+\begin{lstlisting}{language=bash}
+# mkdir /etc/pacman.d/hooks
+# vim /etc/pacman.d/hooks/systemd-boot.hook
+\end{lstlisting}
+\begin{minted}[frame=lines]{bash}
+/etc/pacman.d/hooks/systemd-boot.hook
+======================================================================
+[Trigger]
+Type = Package
+Operation = Upgrade
+Target = systemd
+
+[Action]
+Description = Updating systemd-boot
+When = PostTransaction
+Exec = /usr/bin/bootctl update
+\end{minted}
+Now that that is setup we need to configure the bootloader as well which requires changing two files:
+\begin{lstlisting}{language=bash}
+# vim /boot/loader/loader.conf
+\end{lstlisting}
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+/boot/loader/loader.conf
+======================================================================
+default arch
+editor 0
+\end{minted}
+the 'default arch' refers to the 'arch' in the next filenameand the'editor' 0' stops people from being able to modify the boot paramaters from the boot screen. The next file is:
+\begin{lstlisting}{language=bash}
+# vim /boot/loader/entries/arch.conf
+\end{lstlisting}
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+/boot/loader/entris/arch.conf
+======================================================================
+title Arch Linux
+linux /vmlinuz-linux
+initrd /initramf-linux.img
+options cryptdevice=UUID=d6e55816-b96a-443c-bc0f-9d34a1c02dc6:crypt root=/dev/volume/root rw
+\end{minted}
+If you are in doubt of any of the above paramaters for your system you can always use the vim :r command to read in text from a command like so ':r !command' where command can be anything. Useful commands here include: 'ls -l /dev/disk/by-uuid', 'ls /boot', and 'lsblk'.
+
+The ':crypt' is the name of the encrypted system that will be mounted to /dev/mapper. So it should then mount /dev/mapper/crypt
+
+The 'root=/dev/volume/root' parameter specifies the root partition so be sure to get that right for your system.
+
+'rw' is there to make sure that the root partition gets mounted in read-write mode.
+
+\subsection{Enabling Microcode Updates}
+Depending on your processor you will want to execute one of the following two commands:
+\begin{lstlisting}{language=bash}
+# pacman -S amd-ucode
+# pacman -S intel-ucode
+\end{lstlisting}
+(amd-ucode for amd systems, intel-ucode for Intel systems, duh)\\
+And then add the corresponding line file to the arch.conf file for the case of Intel:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+/boot/loader/entries/arch.conf
+======================================================================
+initrd /intel-ucode.img
+\end{minted}
+Be sure to add the line above before the other initrd line and after the linux line.
+Your corresponding .img file (in the case you have an AMD system) can be found by running ls /boot or ':r !ls /boot' within vim.
+
+\subsection{Rebooting}
+Start by exiting the chroot environment by executing exit:
+\begin{lstlisting}{language=bash}
+# exit
+\end{lstlisting}
+You may optionally unmount all partitions by executing:
+\begin{lstlisting}{language=bash}
+# umount -R /mnt
+\end{lstlisting}
+Then reboot the system with:
+\begin{lstlisting}{language=bash}
+# reboot
+\end{lstlisting}
+Don't forget to remove your installation media and then reboot and log in using your root password that you set earlier.

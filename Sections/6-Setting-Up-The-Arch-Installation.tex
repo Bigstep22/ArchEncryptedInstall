@@ -1,0 +1,147 @@
+
+\section{Setting Up the Arch Installation}
+\subsection{Internet Connection}
+\label{sec:Internet_Connection}
+This still assumes that you are connected to ethernet since we haven't installed any NetworkManager-like utilities.
+Start by running:
+\begin{lstlisting}{language=bash}
+# ip link 
+\end{lstlisting}
+Which should produce an output something like this:
+\inputminted[linenos, fontsize=\small, baselinestretch=0.875, frame=lines]{shell}{Sections/6/iplink.txt}
+On most computers the lo or 'loopback' device is used to sending messages to the computer and can be ignored when setting up initial internet access. In my case the only other device is enp0s3. In most cases the device that you are looking for is 'eth0'. Using this device name execute the following with ethernet connected:
+\begin{lstlisting}{language=bash}
+# dhcpcd eth0
+\end{lstlisting}
+Or in my case:
+\begin{lstlisting}{language=bash}
+# dhcpcd enp0s30
+\end{lstlisting}
+This should connect with the router its connected to and attain an ip address. If all goes well and you execute:
+\begin{lstlisting}{language=bash}
+# ping archlinux.org
+\end{lstlisting}
+You should get responses to you pings.
+
+\subsection{Create a Non-Root User and Installing sudo}
+We will start by adding a simple non-root user by executing:
+\begin{lstlisting}{language=bash}
+# useradd -m -G wheel -s /bin/bash username
+\end{lstlisting}
+Where -m specifies to create the home directory in the default location, '-G wheel' specifies the name of any additional groups the user should be in, where '-s /bin/bash' specifies the location of the login shell for the user and where username is the actual name of the user.
+
+The above wheel group is the most commonly used group for system administrators and the /bin/bash login shell should be enough for now unless you have already installed another shell and want to use it in which case you should already know what you are doing.
+
+After creating the use we of course also need to set a password for it:
+\begin{lstlisting}{language=bash}
+# passwd username
+\end{lstlisting}
+Since we will still want to be able to some commands as root (like when installing packages) we should also install sudo to be able to do so without having to use 'su' or substitute user:
+\begin{lstlisting}{language=bash}
+# pacman -S sudo
+\end{lstlisting}
+Then execute visudo and uncomment the line:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+# %wheel ALL=(ALL) ALL
+\end{minted}
+Such that it reads:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+%wheel ALL=(ALL) ALL
+\end{minted}
+Once this is done the user you just created (the one in the wheel group) should be able to run any command using sudo. You can check by executing:
+\begin{lstlisting}{language=bash}
+# sudo -lU username
+\end{lstlisting}
+Where username is the name of the user. If it says username may run (ALL) ALL commands on the system, you are set to go.
+
+\subsection{Disabling Root Login and Enabling Hibernate}
+Once you are sure that you can use sudo using your default user (login to your username account and test a command like "sudo pacman -S") we can disable the use of the root account to make the system more secure by forcing an attacker to guess a username as well as a password.
+
+Once you are 100\% sure you can access root user privileges with your username account you may execute this knowing that if you mess it up that you will permanently lock yourself out of root privileges:
+\begin{lstlisting}{language=bash}
+# passwd -l root
+\end{lstlisting}
+If you ever need to you can also unlock the root user using:
+\begin{lstlisting}{language=bash}
+$ sudo passwd -u root
+\end{lstlisting}
+Again, keep in mind that if you are unable to use sudo when locking root and you log out of root, you can say goodbye to your root priveleges. YOU HAVE BEEN WARNED.
+
+Next log out of your root user and log in to your username account where we will enable hibernation.
+
+If you look above you will remember the /boot/loader/entries/arch.conf file. Within there there were a set of kernel parameters set after the option flag. If we want to have hibernation enabled (suspend to disk) we have to add one more parameters specifying the swap partition.
+
+So if your arch.conf file is still the same change the line that use to look like:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+/boot/loader/entries/arch.conf
+======================================================================
+options SOME_PARAMETERS_HERE
+\end{minted}
+To this:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+options SOME_PARAMETERS_HERE resume=/dev/volume/swap
+\end{minted}
+Using the command (Since we aren't root anymore):
+\begin{lstlisting}{language=bash}
+$ sudo vim /boot/loader/entries/arch.conf
+\end{lstlisting}
+Where the last paramater specifies the location of the swap partition (in this case /dev/volume/swap).
+Next add the resume hook to the initramfs where:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+/etc/mkinicpio.conf
+======================================================================
+HOOKS=(base udev autodetect keyboard keymap modconf block encrypt lvm2 filesystems keyboard fsck)
+\end{minted}
+Gets changed to:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+HOOKS=(base udev autodetect keyboard keymap modconf block encrypt lvm2 filesystems keyboard resume fsck)
+\end{minted}
+Next regenerate the initramfs:
+\begin{lstlisting}{language=bash}
+$ sudo mkinitcpio -p linux
+\end{lstlisting}
+
+Hibernation should now be enabled. Reboot your system, log in, and execute:
+\begin{lstlisting}{language=bash}
+$ sudo systemctl hibernate
+\end{lstlisting}
+Then start up you system again. If all is well, you system should now be in the state slightly before you hibernated it.
+NOTE: Don't forget to reconnect to the internet using dhcpcd as is described in \ref{sec:Internet_Connection}
+
+\subsection{AUR Helper and AUR Tutorial}
+Before you go any further I recommend reading up on the following four topics:
+\begin{itemize}
+    \item Service Management: \url{https://wiki.archlinux.org/index.php/Systemd#Basic_systemctl_usage}
+    \item System Maintenance: \url{https://wiki.archlinux.org/index.php/System_maintenance}
+    \item Security: \url{https://wiki.archlinux.org/index.php/Security}
+    \item Arch User Repository (AUR): \url{https://wiki.archlinux.org/index.php/Arch_User_Repository}
+\end{itemize}
+Knowing these four concepts is core to doing basic system maintenance and tuning in the future and contain plenty of links to other articles that are just as useful. For this section pay additional attention to the fourth link. Knowing how to install AUR packages yourself wihtout and AUR helper is crucial to being to install anything outside the official repositories.
+
+For this next part we will also need the base-devel and git packages installed:
+\begin{lstlisting}{language=bash}
+$ sudo pacman -S base-devel git
+\end{lstlisting}
+Hit enter on the prompt such that it will do the default which is to install all of the base-devel packages.
+
+For this guide I will be installing the trizen package manager mostly because I'm used to it but also because IMO it's one of the better AUR helpers out there.
+Start by finding the trizen AUR page (yes, do this on your own I need to make sure you are paying attention) and use the Git Clone URL to clone the repo within the /tmp folder (which happens to be a ramdisk folder):
+\begin{lstlisting}{language=bash}
+$ git clone https://link_to_git_repo
+\end{lstlisting}
+cd into the directory that gets created and read the contents ot PKGBUILD using 'vim' or 'less' to make sure there is no malicious code and then run the following command to build and install trizen:
+\begin{lstlisting}{language=bash}
+$ makepkg -si
+\end{lstlisting}
+After this AUR packages can easily be installed or updated by invoking trizen like you would pacman:
+\begin{lstlisting}{language=bash}
+$ trizen -S package_name
+$ trizen -Syu
+\end{lstlisting}
+NOTE: make sure you do not execute trizen as root user as this can be extremely dangerous because the build process of AUR applications could (in rare cases) contain code that could cause damage to your system either maliciously or carelessly when allowed root user privilages.
+
+NOTE: I don't know if this makes a big difference in the real world but I recommend always updating all you packages using pacman before doing so with trizen.
+
+
+
+

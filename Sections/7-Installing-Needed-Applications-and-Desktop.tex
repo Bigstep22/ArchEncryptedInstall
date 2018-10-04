@@ -1,0 +1,51 @@
+\section{Installing Needed Applications and Desktop}
+\subsection{Basic Internet Installation}
+For the internet connection manager I will be installing NetworkManager because it supports both wired and wireless connection management as well as having many possible gui applications that can be run on top of it to make its configuration easier.
+
+Fore more information visit: \url{https://wiki.archlinux.org/index.php/NetworkManager}
+
+To install it:
+\begin{lstlisting}{language=bash}
+$ sudo pacman -S networkmanager
+\end{lstlisting}
+Then enable its system service/daemon:
+\begin{lstlisting}{language=bash}
+$ sudo systemctl enable --now NetworkManager.service
+\end{lstlisting}
+This command enables the NetworkManager service while the --now flag starts it without having to invoke a second command or reboot to do so.
+After starting the NetworkManager service it is possible to see the network status by executing :
+\begin{lstlisting}{language=bash}
+$ nmcli
+\end{lstlisting}
+And it is possible to start a graphical interface from the command line to manually create new connections (YES! Even Wifi connections as long as you know its interface \ref{sec:Internet_Connection}) by executing:
+\begin{lstlisting}{language=bash}
+$ nmtui
+\end{lstlisting}
+
+\subsection{Install and Setup Command Line Tools}
+Next install a large group of needed command line utilities that are useful during development and monitoring systems:
+\begin{lstlisting}{language=bash}
+$ sudo pacman -S thefuck tldr entr htop tig zsh sl tmux ranger borg lshw 
+efibootmgr python openssh
+$ trizen -S drive-bin entr
+\end{lstlisting}
+As well as removing a package that I personally don't need or want on my system:
+\begin{lstlisting}{language=bash}
+$ sudo pacman -Rnscu nano
+\end{lstlisting}
+NOTE: The '-Rnscu' flag recursively remove packages both that are not needed and packages that dependent on the package in question. If you execute this command with this flag on the wrong package you could brick or remove large chunks of your system BE CAREFUL.
+
+\subsection{Installing i3/sway}
+
+
+
+
+
+
+\subsection{Installing and Setting up a Display Manager}
+
+\section{Setting up i3}
+\subsection{Final Internet Installation}
+\subsection{Commonly Used Applications}
+\subsection{VPN: Setup Wireguard up and Down and openVPN}
+\subsection{Installing Bluetooth Management Software}

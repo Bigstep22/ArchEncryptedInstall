@@ -1,0 +1,77 @@
+
+\section{Disk Setup}
+This is where this document will deviate from the installation tutorial from the ArchWiki. This guide will attempt to document the installation of an  \href{https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system#LVM_on_LUKS}{LVM on LUKS encrypted system with an on-disk boot partition as shown here}.
+
+\subsection{Partitioning}
+Start by running lsblk to see your partition layout:
+\begin{lstlisting}{language=bash}
+# lsblk
+\end{lstlisting}
+Select the partition you want to use from the output (eg. sda) and run the following command for it:
+\begin{lstlisting}{language=bash}
+# gdisk /dev/sda
+\end{lstlisting}
+From there use the ? command to see a list of gdisk commands and figure out all of the needed commands.
+Start by making the first partition (using the 'n' command) within gdisk of size ~512M for /boot of type EF00 (which should be the default type).
+
+Then fill the rest with a second partition of type 8E00 (which will be our encrypted LVM volume) then use the w command within gdisk to write all the GTP data to the disk and exit.
+
+\subsection{The Encryption}
+Create the LUKS encrypted container using the command:
+\begin{lstlisting}{language=bash}
+# cryptsetup luksFormat --type luks2 /dev/sda2
+\end{lstlisting}
+After filling out your password twice, the encrypted partition should now be set up.
+(Note: /dev/sda2 refers to the partition which will be the 'system' partition)
+
+Now mount the encrypted partition so that it can be set up with the LVM and all needed partitions:
+\begin{lstlisting}{language=bash}
+# cryptsetup open /dev/sda2 crypt
+\end{lstlisting}
+Now the decrypted container should be available at /dev/mapper/crypt
+
+\subsection{The Logical Volumes}
+Start by creating a physical volume on top of the LUKS container:
+\begin{lstlisting}{language=bash}
+# pvcreate /dev/mapper/crypt
+\end{lstlisting}
+Followed by the creation of the volume group with the name 'volume':
+\begin{lstlisting}{language=bash}
+# vgcreate volume /dev/mapper/crypt
+\end{lstlisting}
+Now create all the needed volumes (subpartitions if you will) for the system:
+\begin{lstlisting}{language=bash}
+# lvcreate -L 8G volume -n swap
+# lvcreate -L 32G volume -n root
+# lvcreate -l 100%FREE volume -n home
+\end{lstlisting}
+You can modify the sizes '8G' and '32G' for whatever desired size the partitions will be.
+
+\subsection{Formatting the Filesystems}
+Format the filesystems for all the respective partitions on the system volumes:
+\begin{lstlisting}{language=bash}
+# mkswap /dev/volume/swap
+# mkfs.ext4 /dev/volume/root
+# mkfs.ext4 /dev/volume/home
+\end{lstlisting}
+After formatting the filesystems, mount them:
+\begin{lstlisting}{language=bash}
+# swapon /dev/volume/swap
+# mount /dev/volume/root /mnt
+# mkdir /mnt/home
+# mount /dev/volume/home /mnt/home
+\end{lstlisting}
+
+\subsection{Boot Partition}
+Since we don't have to do any fancy magic for the boot partition we can start right away by formatting (where sda1 is the desired boot partition):
+\begin{lstlisting}{language=bash}
+# mkfs.fat -F32 /dev/sda1
+\end{lstlisting}
+Followed by making the needed directory:
+\begin{lstlisting}{language=bash}
+# mkdir /mnt/boot
+\end{lstlisting}
+Followed by mounting:
+\begin{lstlisting}{language=bash}
+# mount /dev/sda1 /mnt/boot
+\end{lstlisting}

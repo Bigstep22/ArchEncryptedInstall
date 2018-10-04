@@ -1,0 +1,16 @@
+# Static information about the filesystems.
+# See fstab(5) for details.
+
+# <file system> <dir> <type> <options> <dump> <pass>
+# /dev/mapper/volume-root UUID=7e069bbc-322e-4a2e-9b3e-d1d773d16f0b
+/dev/mapper/volume-root	/         	ext4      	rw,relatime	0 1
+
+# /dev/mapper/volume-home UUID=a498084b-ec89-4211-905d-8dae6d7dbdd0
+/dev/mapper/volume-home	/home     	ext4      	rw,relatime	0 2
+
+# /dev/mapper/volume-swap UUID=db0dc117-df8d-405d-80c4-f840e50ab53a
+/dev/mapper/volume-swap	none      	swap      	defaults,pri=-2	0 0
+
+# /dev/sda1
+UUID=3718-A53C      	/boot     	vfat      	rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,utf8,errors=remount-ro	0 2
+
