@@ -12,5 +12,5 @@
 /dev/mapper/volume-swap	none      	swap      	defaults,pri=-2	0 0
 
 # /dev/sda1
-UUID=3718-A53C      	/boot     	vfat      	rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,utf8,errors=remount-ro	0 2
+UUID=3718-A53C      	/boot     	vfat      	noauto,rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,utf8,errors=remount-ro	0 2
 

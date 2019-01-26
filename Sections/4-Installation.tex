@@ -28,6 +28,10 @@ And use vim to delete the three sets of lines referencing the lvm-based partitio
 
 An example fstab file is shown below as specified above:
 \inputminted[linenos, fontsize=\small, baselinestretch=0.875, frame=lines]{shell}{Sections/4/fstab.txt}
+Notice the noauto option that is added to the /boot partition, this allows the user to pull out the usb boot device once booting has completed and still allows for easy boot mounting when a pacman update is invoked by executing:
+\begin{lstlisting}{language=bash}
+# mount /boot
+\end{lstlisting}
 
 \subsection{Chroot and Timezone}
 Chroot into the new system:

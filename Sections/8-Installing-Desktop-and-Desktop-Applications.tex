@@ -1,0 +1,73 @@
+
+\section{Installing i3 Desktop and Desktop Applications}
+\subsection{Using Stow}
+Before we install the window manager i3 we need to make sure the configuration files are in place by running:
+\begin{lstlisting}{language=bash}
+$ stow -v -S i3
+\end{lstlisting}
+From within the dotfiles folder. Make sure the .config folder in ~ (home folder) has been created before you do this.
+
+If you aren't using the dotfiles. Skip this step.
+
+
+\subsection{Installing i3}
+\begin{lstlisting}{language=bash}
+$ sudo pacman -S i3 xorg-server xf86-video-intel 
+\end{lstlisting}
+At the prompt install i3-gaps, i3-blocks, and i3-lock.
+In the case of and Intel cpu use the above intel drive given else look up your needed driver at the arch Xorg page
+
+Below are all of the applications that my dotfile config depends on as well as some handy applications
+\begin{lstlisting}{language=bash}
+$ sudo pacman -S rofi xorg-xrandr ttf-dejavu alacritty compton feh imagemagick
+scrot sysstat acpi
+\end{lstlisting}
+
+
+\subsection{Installing LightDM}
+We also need to install lightdm to be able to launch the i3wm at boot.
+If you are using the dotfiles, first stow the lightdm files after making sure the lightdm folder exists in /etc:
+\begin{lstlisting}{language=bash}
+$ sudo stow -vt /etc/lightdm -S lightdm
+\end{lstlisting}
+Now install the needed applitions:
+\begin{lstlisting}{language=bash}
+$ sudo pacman -S lightdm accountsservice
+\end{lstlisting}
+And add the default user to the autologin group:
+\begin{lstlisting}{language=bash}
+$ sudo groupadd -r autologin
+$ sudo gpasswd -a username autologin
+\end{lstlisting}
+And add the following lines to the lighdm.conf:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+/etc/lighdm/lighdm.conf
+======================================================================
+[Seat:*]
+autologin-user=username
+autologin-session=i3
+\end{minted}
+
+
+Now start the lightdm.service so it starts at boot:
+\begin{lstlisting}{language=bash}
+$ sudo systemctl enable lightdm.service
+\end{lstlisting}
+Reboot and you should now be in the i3wm
+
+\subsection{Desktop Applications}
+
+
+
+
+
+
+
+
+
+
+\section{GUI Management Untilities}
+\subsection{Final Internet Installation}
+\subsection{Commonly Used Applications}
+\subsection{VPN: Setup Wireguard up and Down and openVPN}
+\subsection{Installing Bluetooth Management Software}

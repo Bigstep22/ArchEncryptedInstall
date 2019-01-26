@@ -1,16 +1,78 @@
 \section{Final Setup}
+\subsection{Modifying Encrypt Hook}
+The encrypt hook has to be modified to let crypsetup use the seperate header. Make a copy so it is not overwritten on a mkinitcpio update:
+\begin{lstlisting}{language=bash}
+# cp /usr/lib/initcpio/hooks/encrypt /etc/initcpio/hooks/encrypt2
+\end{lstlisting}
+\begin{lstlisting}{language=bash}
+# cp /usr/lib/initcpio/install/encrypt /etc/initcpio/install/encrypt2
+\end{lstlisting}
+Then, in /etc/initcpio/hooks/encrypt2 at around 52 add the following text:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+local headerFlag=false
+	header)
+            cryptargs="${cryptargs} --header /boot/header.img"
+            headerFlag=true
+            ;;
+        *)
+\end{minted}
+And modify this line
+\begin{lstlisting}{language=bash}
+if cryptsetup isLuks ${resolved} >/dev/null 2>&1; then
+\end{lstlisting}
+Such that it ends up looking like this:
+\begin{minted}[frame=lines,fontsize=\small]{bash}
+/etc/initcpio/hooks/encrypt2
+======================================================================
+warn_deprecated() {
+    echo "The syntax 'root=${root}' where '${root}' is an encrypted volume is deprecated"
+    echo "Use 'cryptdevice=${root}:root root=/dev/mapper/root' instead."
+}
+
+local headerFlag=false
+for cryptopt in ${cryptoptions//,/ }; do
+    case ${cryptopt} in
+        allow-discards)
+            cryptargs="${cryptargs} --allow-discards"
+            ;;
+        header)
+            cryptargs="${cryptargs} --header /boot/header.img"
+            headerFlag=true
+            ;;
+        *)
+            echo "Encryption option '${cryptopt}' not known, ignoring." >&2
+            ;;
+    esac
+done
+
+if resolved=$(resolve_device "${cryptdev}" ${rootdelay}); then
+    if $headerFlag || cryptsetup isLuks ${resolved} >/dev/null 2>&1; then
+        [ ${DEPRECATED_CRYPT} -eq 1 ] && warn_deprecated
+        dopassphrase=1
+\end{minted}
+
+
+
 \subsection{Initramfs and Password}
-Edit the mkinitcpio.conf file to add the needed hooks: keyboard, keymap, encrypt, lvm2. Change:
+Edit the mkinitcpio.conf file to add the needed hooks: keyboard, keymap, encrypt2, lvm2; Modules: loop; and Files: /boot/header.img Change:
 \begin{minted}[frame=lines,fontsize=\small]{bash}
 /etc/mkinitcpio.conf
 ======================================================================
+MODULES=()
+...
+FILES=()
+...
 HOOKS=(base udev autodetect consolefont modconf block filesystems fsck)
 \end{minted}
 To:
 \begin{minted}[frame=lines,fontsize=\small]{bash}
 /etc/mkinitcpio.conf
 ======================================================================
-HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck)
+MODULES=(loop)
+...
+FILES=(/boot/header.img)
+...
+HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt2 lvm2 filesystems fsck)
 \end{minted}
 And add the following below the HOOKS next to all the commented out compression examples:
 \begin{minted}[frame=lines,fontsize=\small]{bash}
@@ -71,12 +133,16 @@ the 'default arch' refers to the 'arch' in the next filenameand the'editor' 0' s
 ======================================================================
 title Arch Linux
 linux /vmlinuz-linux
-initrd /initramf-linux.img
-options cryptdevice=UUID=d6e55816-b96a-443c-bc0f-9d34a1c02dc6:crypt root=/dev/volume/root rw
+initrd /initramfs-linux.img
+options cryptdevice=/dev/diskby-id/your-root-disk_id:crypt:header root=/dev/volume/root rw
 \end{minted}
 If you are in doubt of any of the above paramaters for your system you can always use the vim :r command to read in text from a command like so ':r !command' where command can be anything. Useful commands here include: 'ls -l /dev/disk/by-uuid', 'ls /boot', and 'lsblk'.
 
+Modify 'your-root-disk\_id' should be changed to whatever your system identifies as your root drive
+
 The ':crypt' is the name of the encrypted system that will be mounted to /dev/mapper. So it should then mount /dev/mapper/crypt
+
+The ':header' is the header option that we created when modifying the /etc/initcpio/hooks/encrypt2 file (notice the 'header)' section in the file)
 
 The 'root=/dev/volume/root' parameter specifies the root partition so be sure to get that right for your system.
 
@@ -111,4 +177,13 @@ Then reboot the system with:
 \begin{lstlisting}{language=bash}
 # reboot
 \end{lstlisting}
-Don't forget to remove your installation media and then reboot and log in using your root password that you set earlier.
+Don't forget to remove your installation media and keep the usb key in the computer.
+
+Then reboot and enter the system using the encryption password you set earlier.
+
+Then log in using root as username and your root password that you set earlier.
+Then mount your boot partition so that the next few steps are done safely whenever updating software by executing:
+\begin{lstlisting}{language=bash}
+# mount /boot
+\end{lstlisting}
+Because we have a line in fstab with /boot on it it should automatically mount the right partition if the USB key is inserted

@@ -17,6 +17,10 @@ Or in my case:
 \begin{lstlisting}{language=bash}
 # dhcpcd enp0s30
 \end{lstlisting}
+If you're not sure what device to use just plainly running the following command might work:
+\begin{lstlisting}{language=bash}
+# dhcpcd
+\end{lstlisting}
 This should connect with the router its connected to and attain an ip address. If all goes well and you execute:
 \begin{lstlisting}{language=bash}
 # ping archlinux.org
@@ -96,7 +100,7 @@ Gets changed to:
 \begin{minted}[frame=lines,fontsize=\small]{bash}
 HOOKS=(base udev autodetect keyboard keymap modconf block encrypt lvm2 filesystems keyboard resume fsck)
 \end{minted}
-Next regenerate the initramfs:
+Next regenerate the initramfs making sure that your /boot partition is mounted:
 \begin{lstlisting}{language=bash}
 $ sudo mkinitcpio -p linux
 \end{lstlisting}
@@ -119,6 +123,8 @@ Before you go any further I recommend reading up on the following four topics:
 Knowing these four concepts is core to doing basic system maintenance and tuning in the future and contain plenty of links to other articles that are just as useful. For this section pay additional attention to the fourth link. Knowing how to install AUR packages yourself wihtout and AUR helper is crucial to being to install anything outside the official repositories.
 
 For this next part we will also need the base-devel and git packages installed:
+
+MAKE SURE /BOOT IS MOUNTED!!!!! Since You May Have Rebooted To Test Hibernate
 \begin{lstlisting}{language=bash}
 $ sudo pacman -S base-devel git
 \end{lstlisting}

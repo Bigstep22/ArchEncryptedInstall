@@ -1,4 +1,4 @@
-\section{Installing Needed Applications and Desktop}
+\section{Installing Needed Command Line Applications}
 \subsection{Basic Internet Installation}
 For the internet connection manager I will be installing NetworkManager because it supports both wired and wireless connection management as well as having many possible gui applications that can be run on top of it to make its configuration easier.
 
@@ -22,12 +22,39 @@ And it is possible to start a graphical interface from the command line to manua
 $ nmtui
 \end{lstlisting}
 
+\subsection{Clone Dotfile Repository}
+I will be cloning my personal dotfile repository in order to import all my settings easily:
+\begin{lstlisting}{language=bash}
+$ git clone https://link.to/repository
+\end{lstlisting}
+In order to easily install all of the dotfiles I will need GNU stow:
+\begin{lstlisting}{language=bash}
+$ sudo pacman -S stow
+\end{lstlisting}
+Now you can unstow any of the packages within the dotfile repo:
+\begin{lstlisting}{language=bash}
+$ stow -v -S folder_name
+\end{lstlisting}
+The -v flag enables more verbose output and -S instructs stow to actually stow the folder specified.
+
+
+\subsection{Install Zsh and 'thefuck' Spell Correction and OpenSSH}
+Now that all of the dotfiles are present for zsh and thefuck we can go ahead and install thenm:
+\begin{lstlisting}{language=bash}
+$ sudo pacman -S zsh thefuck openssh
+\end{lstlisting}
+Installing thefuck also takes care of installing Python since it is a dependency.
+We also need to install openssh as zsh uses it in my default zsh config (only applies when using dotfiles)
+
+
 \subsection{Install and Setup Command Line Tools}
 Next install a large group of needed command line utilities that are useful during development and monitoring systems:
 \begin{lstlisting}{language=bash}
-$ sudo pacman -S thefuck tldr entr htop tig zsh sl tmux ranger borg lshw 
-efibootmgr python openssh
-$ trizen -S drive-bin entr
+$ sudo pacman -S tldr entr htop tig sl tmux ranger borg lshw efibootmgr
+\end{lstlisting}
+If desired, a program that can upload files to google drive can also be installed:
+\begin{lstlisting}{language=bash}
+$ trizen -S drive-bin
 \end{lstlisting}
 As well as removing a package that I personally don't need or want on my system:
 \begin{lstlisting}{language=bash}
@@ -35,17 +62,4 @@ $ sudo pacman -Rnscu nano
 \end{lstlisting}
 NOTE: The '-Rnscu' flag recursively remove packages both that are not needed and packages that dependent on the package in question. If you execute this command with this flag on the wrong package you could brick or remove large chunks of your system BE CAREFUL.
 
-\subsection{Installing Sway}
 
-
-
-
-
-
-\subsection{Installing and Setting up Lightdm/lightdm-mini-greeter}
-
-\section{Setting up Sway}
-\subsection{Final Internet Installation}
-\subsection{Commonly Used Applications}
-\subsection{VPN: Setup Wireguard up and Down and openVPN}
-\subsection{Installing Bluetooth Management Software}

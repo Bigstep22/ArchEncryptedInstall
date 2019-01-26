@@ -1,32 +1,29 @@
 
 \section{Disk Setup}
-This is where this document will deviate from the installation tutorial from the ArchWiki. This guide will attempt to document the installation of an  \href{https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system#LVM_on_LUKS}{LVM on LUKS encrypted system with an on-disk boot partition as shown here}.
+This is where this document will deviate from the installation tutorial from the ArchWiki. This guide will attempt to document the installation of an  \href{https://wiki.archlinux.org/index.php/Dm-crypt/Specialties#Encrypted_system_using_a_detached_LUKS_header}{LVM on LUKS encrypted system using aa detached LUKS header}.
 
-\subsection{Partitioning}
+\subsection{Encrypting The Disk}
 Start by running lsblk to see your partition layout:
 \begin{lstlisting}{language=bash}
 # lsblk
 \end{lstlisting}
-Select the partition you want to use from the output (eg. sda) and run the following command for it:
+First create an empty header file
 \begin{lstlisting}{language=bash}
-# gdisk /dev/sda
+# dd if=/dev/zero of=header.img bs=4M count=1
 \end{lstlisting}
-From there use the ? command to see a list of gdisk commands and figure out all of the needed commands.
-Start by making the first partition (using the 'n' command) within gdisk of size ~512M for /boot of type EF00 (which should be the default type).
+Select the block device you want to use from the output (eg. sda) and run the following command for it to create the LUKS encrypted container using the command:
 
-Then fill the rest with a second partition of type 8E00 (which will be our encrypted LVM volume) then use the w command within gdisk to write all the GTP data to the disk and exit.
-
-\subsection{The Encryption}
-Create the LUKS encrypted container using the command:
 \begin{lstlisting}{language=bash}
-# cryptsetup luksFormat --type luks2 /dev/sda2
+# cryptsetup luksFormat --type luks2 /dev/sda --align-payload 8192 --header header.img
 \end{lstlisting}
 After filling out your password twice, the encrypted partition should now be set up.
-(Note: /dev/sda2 refers to the partition which will be the 'system' partition)
+(Note: /dev/sda refers to the block device which will be the encrypted 'system' partition)
+
+From the articel linked above: (Tip: When using option --header, --align-payload allows specifying the start of encrypted data on a device. By reserving a space at the beginning of device you have the option of later reattaching the LUKS header. See cryptsetup(8) for values supported by --align-payload.)
 
 Now mount the encrypted partition so that it can be set up with the LVM and all needed partitions:
 \begin{lstlisting}{language=bash}
-# cryptsetup open /dev/sda2 crypt
+# cryptsetup open --header header.img /dev/sda crypt
 \end{lstlisting}
 Now the decrypted container should be available at /dev/mapper/crypt
 
@@ -63,9 +60,18 @@ After formatting the filesystems, mount them:
 \end{lstlisting}
 
 \subsection{Boot Partition}
-Since we don't have to do any fancy magic for the boot partition we can start right away by formatting (where sda1 is the desired boot partition):
+Since we will be using a seperate device for the boot partition we need to partition that disk and then formatting it (where /dev/sdb is the device and sdb1 is the desired boot partition):
 \begin{lstlisting}{language=bash}
-# mkfs.fat -F32 /dev/sda1
+# gdisk /dev/sdb
+\end{lstlisting}
+From there use the ? command to see a list of gdisk commands and figure out all of the needed commands.
+
+Start by making the boot first partition (using the 'n' command) within gdisk of size ~512M(or larger if you want to only use the USB key as a boot key) for /boot of type EF00 (which should be the default type).
+
+Then fill the rest of the drive however you like (although I don't recommend using the usb key for anything other than as a boot drive since the loss of the USB key could mean loss of the entire installed system)
+Format the boot partition such that it can be used on UEFI:
+\begin{lstlisting}{language=bash}
+# mkfs.fat -F32 /dev/sdb1
 \end{lstlisting}
 Followed by making the needed directory:
 \begin{lstlisting}{language=bash}
@@ -73,5 +79,9 @@ Followed by making the needed directory:
 \end{lstlisting}
 Followed by mounting:
 \begin{lstlisting}{language=bash}
-# mount /dev/sda1 /mnt/boot
+# mount /dev/sdb1 /mnt/boot
+\end{lstlisting}
+And copyint the header file to the boot (USB) partition:
+\begin{lstlisting}{language=bash}
+# cp header.img /mnt/boot
 \end{lstlisting}
